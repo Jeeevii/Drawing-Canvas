@@ -31,12 +31,20 @@ const drawingChangedEvent = new Event("drawing-changed");
 const undoStack: MarkerLine[] = [];
 const redoStack: MarkerLine[] = [];
 
+// Store the current marker thickness
+let currentMarkerThickness = 1;
+
+// Function to set the selected tool (thin or thick)
+function setSelectedTool(thickness: number) {
+  currentMarkerThickness = thickness;
+}
+
 if (context2D) {
   canvas.addEventListener("mousedown", (e) => {
     drawing = true;
     const x = e.clientX - canvas.getBoundingClientRect().left;
     const y = e.clientY - canvas.getBoundingClientRect().top;
-    currentMarkerLine = new MarkerLine(x, y);
+    currentMarkerLine = new MarkerLine(x, y, currentMarkerThickness);
     if (context2D) {
       currentMarkerLine.display(context2D);
     }
@@ -128,7 +136,7 @@ function redrawCanvas() {
     for (let i = 0; i < segment.points.length - 1; i++) {
       context2D!.beginPath();
       context2D!.strokeStyle = "black";
-      context2D!.lineWidth = 1;
+      context2D!.lineWidth = segment.thickness;
       context2D!.moveTo(segment.points[i].x, segment.points[i].y);
       context2D!.lineTo(segment.points[i + 1].x, segment.points[i + 1].y);
       context2D!.stroke();
@@ -148,9 +156,11 @@ updateUndoRedoButtons();
 
 class MarkerLine {
   points: { x: number; y: number }[] = [];
+  thickness: number;
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, thickness: number) {
     this.points.push({ x, y });
+    this.thickness = thickness;
   }
 
   drag(x: number, y: number) {
@@ -160,7 +170,7 @@ class MarkerLine {
   display(context: CanvasRenderingContext2D) {
     context.beginPath();
     context.strokeStyle = "black";
-    context.lineWidth = 1;
+    context.lineWidth = this.thickness;
     for (let i = 0; i < this.points.length - 1; i++) {
       context.moveTo(this.points[i].x, this.points[i].y);
       context.lineTo(this.points[i + 1].x, this.points[i + 1].y);
