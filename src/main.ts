@@ -5,20 +5,19 @@ const canvas: HTMLCanvasElement = document.createElement("canvas");
 const context2D: CanvasRenderingContext2D | null = canvas.getContext("2d");
 
 const gameName = "Jeevi's Drawing Game";
-
 document.title = gameName;
 
 const header = document.createElement("h1");
 header.innerHTML = gameName;
 app.append(header);
 
-// drawing canvas
+// create drawing canvas
 const canvasWidth = 256;
 const canvasHeight = 256;
-const borderSize = 2;
+// const borderSize = 2;
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
-canvas.style.border = `${borderSize}px solid black`;
+canvas.style.border = "2px solid black";
 canvas.style.borderRadius = "10px";
 canvas.style.boxShadow = "3px 3px 5px gray";
 canvas.style.backgroundColor = "white";
@@ -31,40 +30,41 @@ const drawingChangedEvent = new Event("drawing-changed");
 const undoStack: MarkerLine[] = [];
 const redoStack: MarkerLine[] = [];
 
-// Store the current marker thickness
+// store the current marker thickness
 let currentMarkerThickness = 1;
 
-// Function to set the selected tool (thin or thick)
+// function to set the selected tool (thin or thick)
 function setSelectedTool(thickness: number) {
   currentMarkerThickness = thickness;
-  updateToolButtons(thickness); // Apply selected tool styling
+  updateToolButtons(thickness); // apply selected tool styling
 }
 
-// Create buttons for "Thin" and "Thick" tools
-const thinButton = document.createElement("button");
-thinButton.textContent = "Thin";
-thinButton.addEventListener("click", () => {
-  setSelectedTool(1);
-});
-app.append(thinButton);
+// create buttons for "Thin" and "Thick" tools
+const thinButton = createToolButton("Thin", 0.5);
+const thickButton = createToolButton("Thick", 4);
 
-const thickButton = document.createElement("button");
-thickButton.textContent = "Thick";
-thickButton.addEventListener("click", () => {
-  setSelectedTool(3);
-});
-app.append(thickButton);
+app.append(thinButton, thickButton);
 
-// Apply selected tool styling
+// apply selected tool styling
 function updateToolButtons(selectedThickness: number) {
-  thinButton.classList.remove("selectedTool");
-  thickButton.classList.remove("selectedTool");
+  const buttons = [thinButton, thickButton];
+  buttons.forEach((button) => {
+    if (button.dataset.thickness === selectedThickness.toString()) {
+      button.classList.add("selectedTool");
+    } else {
+      button.classList.remove("selectedTool");
+    }
+  });
+}
 
-  if (selectedThickness === 1) {
-    thinButton.classList.add("selectedTool");
-  } else if (selectedThickness === 3) {
-    thickButton.classList.add("selectedTool");
-  }
+function createToolButton(label: string, thickness: number): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.textContent = label;
+  button.dataset.thickness = thickness.toString();
+  button.addEventListener("click", () => {
+    setSelectedTool(thickness);
+  });
+  return button;
 }
 
 if (context2D) {
@@ -73,7 +73,7 @@ if (context2D) {
     const x = e.clientX - canvas.getBoundingClientRect().left;
     const y = e.clientY - canvas.getBoundingClientRect().top;
     currentMarkerLine = new MarkerLine(x, y, currentMarkerThickness);
-    if (context2D) {
+    if (context2D && currentMarkerLine) {
       currentMarkerLine.display(context2D);
     }
   });
@@ -84,7 +84,7 @@ if (context2D) {
       const x = e.clientX - canvas.getBoundingClientRect().left;
       const y = e.clientY - canvas.getBoundingClientRect().top;
       currentMarkerLine.drag(x, y);
-      currentMarkerLine.display(context2D as CanvasRenderingContext2D); // Type assertion
+      currentMarkerLine.display(context2D as CanvasRenderingContext2D);
     }
   });
 
@@ -127,8 +127,9 @@ redoButton.addEventListener("click", () => {
   redoDrawing();
 });
 
+app.append(clearButton, undoButton, redoButton);
+
 function clearCanvas() {
-  // clear the canvas and stack with stroke elements
   context2D!.clearRect(0, 0, canvasWidth, canvasHeight);
   segments.length = 0;
   undoStack.length = 0;
@@ -137,7 +138,6 @@ function clearCanvas() {
 }
 
 function undoDrawing() {
-  // push back the recent element that was popped
   if (segments.length > 0) {
     undoStack.push(segments.pop()!);
     canvas.dispatchEvent(drawingChangedEvent);
@@ -145,28 +145,58 @@ function undoDrawing() {
 }
 
 function redoDrawing() {
-  // same thing
   if (undoStack.length > 0) {
     segments.push(undoStack.pop()!);
     canvas.dispatchEvent(drawingChangedEvent);
   }
 }
 
-// add an observer for "drawing-changed" event
+// add stickers and buttons
+const stickers: Sticker[] = [];
+const stickerButtons = createStickerButtons();
+
+app.append(...stickerButtons);
+
+function createStickerButtons(): HTMLButtonElement[] {
+  const stickersData = [
+    { label: "💀", sticker: "💀" },
+    { label: "🐈‍⬛", sticker: "🐈‍⬛" },
+    { label: "😎", sticker: "😎" },
+  ];
+
+  return stickersData.map((data) => {
+    const button = document.createElement("button");
+    button.textContent = data.label;
+    button.addEventListener("click", () => addSticker(data.sticker));
+    return button;
+  });
+}
+
+function addSticker(sticker: string) {
+  const x = Math.random() * (canvasWidth - 100);
+  const y = Math.random() * (canvasHeight - 100);
+  const newSticker = new Sticker(sticker, x, y);
+  stickers.push(newSticker);
+  newSticker.display(context2D as CanvasRenderingContext2D);
+  canvas.dispatchEvent(drawingChangedEvent);
+}
+
+// observer for "drawing-changed" event
 canvas.addEventListener("drawing-changed", () => {
   redrawCanvas();
 });
 
-// function to redraw the canvas
 function redrawCanvas() {
   context2D!.clearRect(0, 0, canvasWidth, canvasHeight);
   for (const segment of segments) {
     segment.display(context2D!);
   }
+  for (const sticker of stickers) {
+    sticker.display(context2D!);
+  }
   updateUndoRedoButtons();
 }
 
-// function to update undo and redo buttons
 function updateUndoRedoButtons() {
   undoButton.disabled = segments.length === 0;
   redoButton.disabled = undoStack.length === 0;
@@ -197,5 +227,22 @@ class MarkerLine {
     }
     context.stroke();
     context.closePath();
+  }
+}
+
+class Sticker {
+  sticker: string;
+  x: number;
+  y: number;
+
+  constructor(sticker: string, x: number, y: number) {
+    this.sticker = sticker;
+    this.x = x;
+    this.y = y;
+  }
+
+  display(context: CanvasRenderingContext2D) {
+    context.font = "32px serif";
+    context.fillText(this.sticker, this.x, this.y);
   }
 }
