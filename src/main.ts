@@ -13,46 +13,49 @@ header.innerHTML = gameName;
 app.append(header);
 
 // drawing canvas
-canvas.width = 256;
-canvas.height = 256;
-canvas.style.border = "2px solid black";
+const canvasWidth = 256;
+const canvasHeight = 256;
+const borderSize = 2;
+canvas.width = canvasWidth;
+canvas.height = canvasHeight;
+canvas.style.border = `${borderSize}px solid black`;
 canvas.style.borderRadius = "10px";
 canvas.style.boxShadow = "3px 3px 5px gray";
 canvas.style.backgroundColor = "white";
 app.append(canvas);
 
-// using arrays to store each stroke to handle redo, undo, and clear
 let drawing = false;
-let currentSegment: { x: number; y: number }[] = [];
-const segments: { x: number; y: number }[][] = [];
+let currentMarkerLine: MarkerLine | null = null;
+const segments: MarkerLine[] = [];
 const drawingChangedEvent = new Event("drawing-changed");
-const undoStack: { x: number; y: number }[][] = [];
-const redoStack: { x: number; y: number }[][] = [];
+const undoStack: MarkerLine[] = [];
+const redoStack: MarkerLine[] = [];
 
 if (context2D) {
-  // handing mouse interaction for drawing
   canvas.addEventListener("mousedown", (e) => {
     drawing = true;
-    context2D.beginPath();
     const x = e.clientX - canvas.getBoundingClientRect().left;
     const y = e.clientY - canvas.getBoundingClientRect().top;
-    currentSegment.push({ x, y });
-    context2D.moveTo(x, y);
+    currentMarkerLine = new MarkerLine(x, y);
+    if (context2D) {
+      currentMarkerLine.display(context2D);
+    }
   });
 
   canvas.addEventListener("mousemove", (e) => {
     if (!drawing) return;
-    const x = e.clientX - canvas.getBoundingClientRect().left;
-    const y = e.clientY - canvas.getBoundingClientRect().top;
-    currentSegment.push({ x, y });
-    context2D.lineTo(x, y);
-    context2D.stroke();
+    if (currentMarkerLine && context2D) {
+      const x = e.clientX - canvas.getBoundingClientRect().left;
+      const y = e.clientY - canvas.getBoundingClientRect().top;
+      currentMarkerLine.drag(x, y);
+      currentMarkerLine.display(context2D as CanvasRenderingContext2D); // Type assertion
+    }
   });
 
   canvas.addEventListener("mouseup", () => {
-    if (currentSegment.length > 0) {
-      segments.push([...currentSegment]);
-      currentSegment = [];
+    if (currentMarkerLine) {
+      segments.push(currentMarkerLine);
+      currentMarkerLine = null;
       canvas.dispatchEvent(drawingChangedEvent);
     }
     drawing = false;
@@ -63,7 +66,7 @@ if (context2D) {
   });
 }
 
-// clear, undo and redo buttons
+// clear, undo, and redo buttons
 const clearButton = document.createElement("button");
 clearButton.textContent = "Clear";
 app.append(clearButton);
@@ -90,7 +93,7 @@ redoButton.addEventListener("click", () => {
 
 function clearCanvas() {
   // clear the canvas and stack with stroke elements
-  context2D!.clearRect(0, 0, canvas.width, canvas.height);
+  context2D!.clearRect(0, 0, canvasWidth, canvasHeight);
   segments.length = 0;
   undoStack.length = 0;
   redoStack.length = 0;
@@ -120,14 +123,14 @@ canvas.addEventListener("drawing-changed", () => {
 
 // function to redraw the canvas
 function redrawCanvas() {
-  context2D!.clearRect(0, 0, canvas.width, canvas.height);
+  context2D!.clearRect(0, 0, canvasWidth, canvasHeight);
   for (const segment of segments) {
-    for (let i = 0; i < segment.length - 1; i++) {
+    for (let i = 0; i < segment.points.length - 1; i++) {
       context2D!.beginPath();
       context2D!.strokeStyle = "black";
       context2D!.lineWidth = 1;
-      context2D!.moveTo(segment[i].x, segment[i].y);
-      context2D!.lineTo(segment[i + 1].x, segment[i + 1].y);
+      context2D!.moveTo(segment.points[i].x, segment.points[i].y);
+      context2D!.lineTo(segment.points[i + 1].x, segment.points[i + 1].y);
       context2D!.stroke();
       context2D!.closePath();
     }
@@ -142,3 +145,27 @@ function updateUndoRedoButtons() {
 }
 
 updateUndoRedoButtons();
+
+class MarkerLine {
+  points: { x: number; y: number }[] = [];
+
+  constructor(x: number, y: number) {
+    this.points.push({ x, y });
+  }
+
+  drag(x: number, y: number) {
+    this.points.push({ x, y });
+  }
+
+  display(context: CanvasRenderingContext2D) {
+    context.beginPath();
+    context.strokeStyle = "black";
+    context.lineWidth = 1;
+    for (let i = 0; i < this.points.length - 1; i++) {
+      context.moveTo(this.points[i].x, this.points[i].y);
+      context.lineTo(this.points[i + 1].x, this.points[i + 1].y);
+    }
+    context.stroke();
+    context.closePath();
+  }
+}
