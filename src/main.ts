@@ -37,6 +37,34 @@ let currentMarkerThickness = 1;
 // Function to set the selected tool (thin or thick)
 function setSelectedTool(thickness: number) {
   currentMarkerThickness = thickness;
+  updateToolButtons(thickness); // Apply selected tool styling
+}
+
+// Create buttons for "Thin" and "Thick" tools
+const thinButton = document.createElement("button");
+thinButton.textContent = "Thin";
+thinButton.addEventListener("click", () => {
+  setSelectedTool(1);
+});
+app.append(thinButton);
+
+const thickButton = document.createElement("button");
+thickButton.textContent = "Thick";
+thickButton.addEventListener("click", () => {
+  setSelectedTool(3);
+});
+app.append(thickButton);
+
+// Apply selected tool styling
+function updateToolButtons(selectedThickness: number) {
+  thinButton.classList.remove("selectedTool");
+  thickButton.classList.remove("selectedTool");
+
+  if (selectedThickness === 1) {
+    thinButton.classList.add("selectedTool");
+  } else if (selectedThickness === 3) {
+    thickButton.classList.add("selectedTool");
+  }
 }
 
 if (context2D) {
@@ -133,15 +161,7 @@ canvas.addEventListener("drawing-changed", () => {
 function redrawCanvas() {
   context2D!.clearRect(0, 0, canvasWidth, canvasHeight);
   for (const segment of segments) {
-    for (let i = 0; i < segment.points.length - 1; i++) {
-      context2D!.beginPath();
-      context2D!.strokeStyle = "black";
-      context2D!.lineWidth = segment.thickness;
-      context2D!.moveTo(segment.points[i].x, segment.points[i].y);
-      context2D!.lineTo(segment.points[i + 1].x, segment.points[i + 1].y);
-      context2D!.stroke();
-      context2D!.closePath();
-    }
+    segment.display(context2D!);
   }
   updateUndoRedoButtons();
 }
