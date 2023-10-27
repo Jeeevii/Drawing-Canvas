@@ -14,7 +14,6 @@ app.append(header);
 // create drawing canvas
 const canvasWidth = 256;
 const canvasHeight = 256;
-// const borderSize = 2;
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
 canvas.style.border = "2px solid black";
@@ -36,7 +35,7 @@ let currentMarkerThickness = 1;
 // function to set the selected tool (thin or thick)
 function setSelectedTool(thickness: number) {
   currentMarkerThickness = thickness;
-  updateToolButtons(thickness); // apply selected tool styling
+  updateToolButtons(thickness);
 }
 
 // create buttons for "Thin" and "Thick" tools
@@ -180,6 +179,19 @@ function addSticker(sticker: string) {
   newSticker.display(context2D as CanvasRenderingContext2D);
   canvas.dispatchEvent(drawingChangedEvent);
 }
+
+// Custom Stickers
+const customStickerButton = document.createElement("button");
+customStickerButton.textContent = "Add Custom Sticker";
+
+customStickerButton.addEventListener("click", () => {
+  const customSticker = window.prompt("Enter your custom sticker:", "🎉");
+  if (customSticker) {
+    addSticker(customSticker);
+  }
+});
+
+app.append(customStickerButton);
 
 // observer for "drawing-changed" event
 canvas.addEventListener("drawing-changed", () => {
