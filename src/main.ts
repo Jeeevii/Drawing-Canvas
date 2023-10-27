@@ -9,7 +9,7 @@ document.title = gameName;
 
 const header = document.createElement("h1");
 header.innerHTML = gameName;
-app.append(header);
+//app.append(header);
 
 // create drawing canvas
 const canvasWidth = 256;
@@ -20,7 +20,7 @@ canvas.style.border = "2px solid black";
 canvas.style.borderRadius = "10px";
 canvas.style.boxShadow = "3px 3px 5px gray";
 canvas.style.backgroundColor = "white";
-app.append(canvas);
+//app.append(canvas);
 
 let drawing = false;
 let currentMarkerLine: MarkerLine | null = null;
@@ -40,9 +40,9 @@ function setSelectedTool(thickness: number) {
 
 // create buttons for "Thin" and "Thick" tools
 const thinButton = createToolButton("Thin", 0.5);
-const thickButton = createToolButton("Thick", 4);
+const thickButton = createToolButton("Thick", 2);
 
-app.append(thinButton, thickButton);
+//app.append(thinButton, thickButton, canvas);
 
 // apply selected tool styling
 function updateToolButtons(selectedThickness: number) {
@@ -104,7 +104,7 @@ if (context2D) {
 // clear, undo, and redo buttons
 const clearButton = document.createElement("button");
 clearButton.textContent = "Clear";
-app.append(clearButton);
+//app.append(clearButton, thinButton, thickButton, canvas, undoButton, redoButton);
 
 clearButton.addEventListener("click", () => {
   clearCanvas();
@@ -112,7 +112,7 @@ clearButton.addEventListener("click", () => {
 
 const undoButton = document.createElement("button");
 undoButton.textContent = "Undo";
-app.append(undoButton);
+//app.append(undoButton);
 
 undoButton.addEventListener("click", () => {
   undoDrawing();
@@ -120,7 +120,7 @@ undoButton.addEventListener("click", () => {
 
 const redoButton = document.createElement("button");
 redoButton.textContent = "Redo";
-app.append(redoButton);
+//app.append(redoButton);
 
 redoButton.addEventListener("click", () => {
   redoDrawing();
@@ -128,14 +128,11 @@ redoButton.addEventListener("click", () => {
 
 const exportButton = document.createElement("button");
 exportButton.textContent = "Export";
-app.append(exportButton);
+//app.append(exportButton);
 
 exportButton.addEventListener("click", () => {
   exportCanvasAsPNG();
 });
-
-app.append(clearButton, undoButton, redoButton, exportButton);
-
 function clearCanvas() {
   context2D!.clearRect(0, 0, canvasWidth, canvasHeight);
   segments.length = 0;
@@ -159,10 +156,10 @@ function redoDrawing() {
 }
 
 // add stickers and buttons
-const stickers: Sticker[] = [];
+const stickers: Emoji[] = [];
 const stickerButtons = createStickerButtons();
 
-app.append(...stickerButtons);
+//app.append(...stickerButtons);
 
 function createStickerButtons(): HTMLButtonElement[] {
   const stickersData = [
@@ -182,7 +179,7 @@ function createStickerButtons(): HTMLButtonElement[] {
 function addSticker(sticker: string) {
   const x = Math.random() * (canvasWidth - 100);
   const y = Math.random() * (canvasHeight - 100);
-  const newSticker = new Sticker(sticker, x, y);
+  const newSticker = new Emoji(sticker, x, y);
   stickers.push(newSticker);
   newSticker.display(context2D as CanvasRenderingContext2D);
   canvas.dispatchEvent(drawingChangedEvent);
@@ -199,7 +196,7 @@ customStickerButton.addEventListener("click", () => {
   }
 });
 
-app.append(customStickerButton);
+//app.append(customStickerButton);
 
 // observer for "drawing-changed" event
 canvas.addEventListener("drawing-changed", () => {
@@ -250,7 +247,7 @@ class MarkerLine {
   }
 }
 
-class Sticker {
+class Emoji {
   sticker: string;
   x: number;
   y: number;
@@ -274,11 +271,11 @@ function exportCanvasAsPNG() {
   exportCanvas.width = 1024;
   exportCanvas.height = 1024;
   const exportContext = exportCanvas.getContext("2d");
-  // Prompt the user for the filename
+  // prompt the user for the filename
   const fileName = window.prompt("Enter the filename:", "drawing");
 
   if (!fileName) {
-    return; // User canceled the prompt
+    return; // user canceled the prompt
   }
   if (!exportContext) {
     console.error("Could not get the export canvas context.");
@@ -300,6 +297,19 @@ function exportCanvasAsPNG() {
   // create an anchor element for downloading
   const anchor = document.createElement("a");
   anchor.href = exportCanvas.toDataURL("image/png");
-  anchor.download = `${fileName}.png`; // Use the specified filename
+  anchor.download = `${fileName}.png`; // use the specified filename
   anchor.click();
 }
+
+app.append(
+  header,
+  canvas,
+  clearButton,
+  undoButton,
+  redoButton,
+  thinButton,
+  thickButton,
+  ...stickerButtons,
+  customStickerButton,
+  exportButton
+);
