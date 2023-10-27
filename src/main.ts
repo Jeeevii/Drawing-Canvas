@@ -126,7 +126,15 @@ redoButton.addEventListener("click", () => {
   redoDrawing();
 });
 
-app.append(clearButton, undoButton, redoButton);
+const exportButton = document.createElement("button");
+exportButton.textContent = "Export";
+app.append(exportButton);
+
+exportButton.addEventListener("click", () => {
+  exportCanvasAsPNG();
+});
+
+app.append(clearButton, undoButton, redoButton, exportButton);
 
 function clearCanvas() {
   context2D!.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -180,12 +188,12 @@ function addSticker(sticker: string) {
   canvas.dispatchEvent(drawingChangedEvent);
 }
 
-// Custom Stickers
+// custom Stickers
 const customStickerButton = document.createElement("button");
-customStickerButton.textContent = "Add Custom Sticker";
+customStickerButton.textContent = "Custom Sticker";
 
 customStickerButton.addEventListener("click", () => {
-  const customSticker = window.prompt("Enter your custom sticker:", "🎉");
+  const customSticker = window.prompt("Enter your custom sticker:", " ");
   if (customSticker) {
     addSticker(customSticker);
   }
@@ -257,4 +265,41 @@ class Sticker {
     context.font = "32px serif";
     context.fillText(this.sticker, this.x, this.y);
   }
+}
+
+// function to export the canvas as a PNG file
+function exportCanvasAsPNG() {
+  // create a new canvas with a larger size
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = 1024;
+  exportCanvas.height = 1024;
+  const exportContext = exportCanvas.getContext("2d");
+  // Prompt the user for the filename
+  const fileName = window.prompt("Enter the filename:", "drawing");
+
+  if (!fileName) {
+    return; // User canceled the prompt
+  }
+  if (!exportContext) {
+    console.error("Could not get the export canvas context.");
+    return;
+  }
+
+  // scale the content
+  const scale = 4; // 4x scaling
+  exportContext.scale(scale, scale);
+
+  // draw all segments and stickers on the new canvas
+  for (const segment of segments) {
+    segment.display(exportContext);
+  }
+  for (const sticker of stickers) {
+    sticker.display(exportContext);
+  }
+
+  // create an anchor element for downloading
+  const anchor = document.createElement("a");
+  anchor.href = exportCanvas.toDataURL("image/png");
+  anchor.download = `${fileName}.png`; // Use the specified filename
+  anchor.click();
 }
