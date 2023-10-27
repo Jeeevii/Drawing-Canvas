@@ -32,18 +32,79 @@ const redoStack: MarkerLine[] = [];
 // store the current marker thickness
 let currentMarkerThickness = 1;
 
-// function to set the selected tool (thin or thick)
-function setSelectedTool(thickness: number) {
-  currentMarkerThickness = thickness;
-  updateToolButtons(thickness);
-}
+// Define an array of possible colors and rotations
+const possibleColors = ["red", "green", "blue", "purple", "orange"];
+const possibleRotations = [0, 15, 30, 45, 60];
 
+// Create variables to store the selected color and rotation
+let selectedColor = "black"; // Default color
+let selectedRotation = 0; // Default rotation
 // create buttons for "Thin" and "Thick" tools
 const thinButton = createToolButton("Thin", 0.5);
 const thickButton = createToolButton("Thick", 2);
+// Function to set the selected tool (thin or thick)
+function setSelectedTool(thickness: number) {
+  currentMarkerThickness = thickness;
+  updateToolButtons(thickness);
 
-//app.append(thinButton, thickButton, canvas);
+  // Randomly select color and rotation
+  selectedColor =
+    possibleColors[Math.floor(Math.random() * possibleColors.length)];
+  selectedRotation =
+    possibleRotations[Math.floor(Math.random() * possibleRotations.length)];
 
+  // Update the tool preview display
+  updateToolPreview(thickness, selectedColor, selectedRotation);
+}
+
+// Add a tool preview element
+const toolPreview = document.createElement("div");
+toolPreview.classList.add("tool-preview");
+//app.append(toolPreview);
+
+// Function to update the tool preview display
+function updateToolPreview(thickness: number, color: string, rotation: number) {
+  toolPreview.style.border = `${thickness}px solid ${color}`;
+  toolPreview.style.transform = `rotate(${rotation}deg)`;
+}
+
+// Update the tool buttons click event handlers
+thinButton.addEventListener("click", () => {
+  setSelectedTool(0.5);
+});
+
+thickButton.addEventListener("click", () => {
+  setSelectedTool(2);
+});
+
+// Initialize the tool preview with the default values
+setSelectedTool(currentMarkerThickness);
+//const toolPreview = document.createElement("div");
+toolPreview.classList.add("tool-preview");
+app.append(toolPreview);
+
+// Create a color picker input element
+const colorPicker = document.createElement("input");
+colorPicker.type = "color";
+colorPicker.value = selectedColor;
+colorPicker.addEventListener("input", (e) => {
+  selectedColor = (e.target as HTMLInputElement).value;
+  updateToolPreview(currentMarkerThickness, selectedColor, selectedRotation);
+});
+toolPreview.append(colorPicker);
+
+// Create a rotation input element
+const rotationInput = document.createElement("input");
+rotationInput.type = "number";
+rotationInput.value = selectedRotation.toString();
+rotationInput.addEventListener("input", (e) => {
+  const value = parseInt((e.target as HTMLInputElement).value);
+  if (!isNaN(value)) {
+    selectedRotation = value;
+    updateToolPreview(currentMarkerThickness, selectedColor, selectedRotation);
+  }
+});
+toolPreview.append(rotationInput);
 // apply selected tool styling
 function updateToolButtons(selectedThickness: number) {
   const buttons = [thinButton, thickButton];
@@ -311,5 +372,6 @@ app.append(
   thickButton,
   ...stickerButtons,
   customStickerButton,
-  exportButton
+  exportButton,
+  toolPreview
 );
